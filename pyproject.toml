@@ -29,6 +29,7 @@ dependencies = []
 [project.urls]
 Repository = "https://github.com/niu2x/markcraft"
 Issues = "https://github.com/niu2x/markcraft/issues"
+PyPI = "https://pypi.org/project/markcraft/"
 
 [dependency-groups]
 dev = [

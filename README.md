@@ -114,6 +114,18 @@ uv run python tests/benchmark.py
 uv build
 ```
 
+## PyPI Publishing
+
+This repository includes GitHub Actions automation for publishing to PyPI:
+
+- Workflow: `.github/workflows/publish-pypi.yml`
+- Trigger: push a tag like `v1.0.1` (or run manually with workflow dispatch)
+- Build command: `uv build`
+- Publish action: `pypa/gh-action-pypi-publish` with Trusted Publishing (OIDC)
+
+Before first release, configure a Trusted Publisher on PyPI for this GitHub repository
+and workflow file.
+
 For benchmark dependencies (`markdown`, `mistune`, `commonmark`), run:
 
 ```sh
@@ -135,3 +147,4 @@ For code contributions, keep commits focused and include tests in `tests/`.
 - Repository: https://github.com/niu2x/markcraft
 - Issues: https://github.com/niu2x/markcraft/issues
 - Actions: https://github.com/niu2x/markcraft/actions
+- PyPI: https://pypi.org/project/markcraft/
