@@ -53,7 +53,7 @@ uv run python tests/benchmark.py
 ## 5) 版本与发布
 
 - 项目版本需保持一致：`pyproject.toml` 与 `src/markcraft/__init__.py` 同步更新。
-- 如使用脚本批量更新版本，参考 `tests/bump_version.sh`。
+- 如使用脚本批量更新版本，参考 `scripts/bump_version.sh`。
 
 ## 6) 提交日志强制规则（全仓库生效）
 
