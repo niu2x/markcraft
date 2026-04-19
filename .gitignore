@@ -1,0 +1,14 @@
+__pycache__/
+*.swp
+out.html
+venv/
+.venv/
+.coverage
+htmlcov
+.pylintrc
+*.egg-info
+dist
+build/
+.DS_Store
+*.vim
+.vscode/

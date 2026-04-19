@@ -1,0 +1,48 @@
+[build-system]
+requires = ["uv_build>=0.8.0,<0.9.0"]
+build-backend = "uv_build"
+
+[project]
+name = "markcraft"
+version = "1.0.0"
+description = "A fast, extensible Markdown parser in pure Python."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "niu2x", email = "niu2x@icloud.com" },
+]
+keywords = ["markdown", "lexer", "parser", "development"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/niu2x/markcraft"
+Issues = "https://github.com/niu2x/markcraft/issues"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.0.0",
+    "parameterized>=0.9.0",
+    "pygments>=2.11.2",
+    "pytest>=8.0.0",
+]
+benchmark = [
+    "commonmark>=0.9.1",
+    "markdown>=3.0.0",
+    "mistletoe>=1.5.1",
+    "mistune>=3.0.0",
+]
+
+[tool.uv.build-backend]
+module-root = "src"
