@@ -1,15 +1,15 @@
 # markcraft
 
-markcraft is a fast, extensible Markdown parser written in pure Python.
-It targets CommonMark behavior and keeps parser internals open for custom tokens
-and custom renderers.
+Your next Markdown parser in Python:
+**pure Python, CommonMark-oriented, and easy to extend.**
 
-## Why markcraft
+## Why You Will Like It
 
-- **Fast enough for large documents** while staying pure Python.
-- **CommonMark-oriented parsing** with deterministic token precedence.
-- **Extensible architecture** for custom block/span tokens and renderers.
-- **Multiple built-in outputs**: HTML, LaTeX, AST, and Markdown.
+- **Pure Python, no C extension burden**: simpler deployment across environments.
+- **CommonMark-oriented behavior**: predictable parsing with stable token precedence.
+- **Extensible architecture**: add custom block/span tokens and custom renderers.
+- **More than HTML output**: ships with HTML, LaTeX, AST, and Markdown renderers.
+- **Built for maintainability**: parser and renderer responsibilities stay cleanly separated.
 
 ## Installation
 
@@ -19,7 +19,7 @@ Install from PyPI:
 pip install markcraft
 ```
 
-For local development (uv + Python 3.13):
+Local development setup (`uv` + Python 3.13):
 
 ```sh
 git clone https://github.com/niu2x/markcraft.git
@@ -27,9 +27,9 @@ cd markcraft
 uv sync
 ```
 
-## Quick Start
+## 30-Second Quick Start
 
-### Python API
+### 1) Render to HTML by default
 
 ```python
 import markcraft
@@ -38,27 +38,17 @@ with open("example.md", "r", encoding="utf-8") as fin:
     html = markcraft.render(fin)
 ```
 
-Use another renderer:
+### 2) Use a specific renderer (for example, LaTeX)
 
 ```python
 import markcraft
-from markcraft.renderers.latex import LaTeXRenderer
+from markcraft.renderers import LaTeXRenderer
 
 with open("example.md", "r", encoding="utf-8") as fin:
     latex = markcraft.render(fin, LaTeXRenderer)
 ```
 
-Structured namespaces are also available:
-
-```python
-from markcraft.renderers import HtmlRenderer
-
-with HtmlRenderer() as renderer:
-    doc = renderer.parse("# hello\n")
-    html = renderer.render(doc)
-```
-
-Explicit parse entrypoints are available when you want parsing to be intentional:
+### 3) Parse explicitly when you need a Document tree
 
 ```python
 import markcraft
@@ -71,7 +61,13 @@ with MarkdownRenderer() as renderer:
     markdown = renderer.render(renderer_specific_doc)
 ```
 
-## Output Formats
+Why call `markcraft.parse(...)` twice here?
+
+- `doc = markcraft.parse(...)` uses the default parser path and returns a generic `Document` tree.
+- `markcraft.parse(..., renderer)` parses with renderer context, so renderer-specific token rules are included when needed.
+- Use the first form for renderer-agnostic analysis; use the second form when your renderer adds or depends on extra syntax.
+
+## Outputs and Extensions
 
 ### Core renderers
 
@@ -80,7 +76,9 @@ with MarkdownRenderer() as renderer:
 - `markcraft.renderers.AstRenderer`
 - `markcraft.renderers.MarkdownRenderer`
 
-### Contrib renderers
+### Extension renderers
+
+Import directly from extension modules:
 
 - `markcraft.extensions.mathjax.MathJaxRenderer`
 - `markcraft.extensions.pygments_renderer.PygmentsRenderer`
@@ -89,6 +87,9 @@ with MarkdownRenderer() as renderer:
 - `markcraft.extensions.jira_renderer.JiraRenderer`
 - `markcraft.extensions.xwiki20_renderer.XWiki20Renderer`
 - `markcraft.extensions.scheme.SchemeRenderer`
+
+Or import from the aggregated namespace:
+
 - `markcraft.renderers.extensions.GithubWikiRenderer`
 - `markcraft.renderers.extensions.JiraRenderer`
 - `markcraft.renderers.extensions.MathJaxRenderer`
@@ -97,50 +98,34 @@ with MarkdownRenderer() as renderer:
 - `markcraft.renderers.extensions.TocRenderer`
 - `markcraft.renderers.extensions.XWiki20Renderer`
 
-## Documentation Map
+## For Contributors
 
-- `README.md`: project overview, install, and usage.
-- `DEVELOPMENT.md`: architecture, token model, renderer model, and extension points.
-- `BENCHMARKING.md`: benchmark method, reproducibility, and optimization guidance.
-
-## Development
-
-Common commands:
+Use `uv` and Python 3.13 for local development.
 
 ```sh
 uv sync
 uv run pytest
-uv run python tests/benchmark.py
-uv build
 ```
 
-## PyPI Publishing
-
-This repository includes GitHub Actions automation for publishing to PyPI:
-
-- Workflow: `.github/workflows/publish-pypi.yml`
-- Trigger: push a tag like `v1.0.1` (or run manually with workflow dispatch)
-- Build command: `uv build`
-- Publish action: `pypa/gh-action-pypi-publish` with Trusted Publishing (OIDC)
-
-Before first release, configure a Trusted Publisher on PyPI for this GitHub repository
-and workflow file.
-
-For benchmark dependencies (`markdown`, `mistune`, `commonmark`), run:
+For benchmarks:
 
 ```sh
 uv sync --group benchmark
+uv run python tests/benchmark.py
 ```
+
+More implementation details: `DEVELOPMENT.md` and `BENCHMARKING.md`.
 
 ## Contributing
 
-Open an issue with context and a minimal reproduction before large changes.
-For code contributions, keep commits focused and include tests in `tests/`.
+Issues, discussions, and pull requests are welcome.
+
+- For larger changes, open an issue first with context and a minimal reproduction.
+- Keep code contributions focused and add tests under `tests/`.
 
 ## Versioning and License
 
-- Current version is defined in `src/markcraft/__init__.py`.
-- Released under the MIT License. See `LICENSE`.
+- Licensed under MIT. See `LICENSE`.
 
 ## Project Links
 
