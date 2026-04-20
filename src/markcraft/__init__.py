@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Top-level API for markcraft."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __all__ = [
     "Document",
     "render",
