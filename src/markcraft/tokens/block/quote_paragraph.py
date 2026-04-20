@@ -27,11 +27,14 @@ class Quote(BlockToken):
     def read(cls, lines):
         from markcraft.tokens import block
 
-        line = cls.convert_leading_tabs(next(lines).lstrip()).split(">", 1)[1]
-        if len(line) > 0 and line[0] == " ":
-            line = line[1:]
+        original_line = next(lines)
+        start_index = lines.get_pos()
+        line, first_prefix = cls.strip_quote_prefix(original_line)
         line_buffer = [line]
         start_line = lines.line_number()
+        start_offset = lines.line_start_offset(start_index)
+        line_start_offsets = [start_offset + first_prefix]
+        line_start_columns = [first_prefix + 1]
 
         in_code_fence = block.CodeFence.start(line)
         in_block_code = block.BlockCode.start(line)
@@ -51,27 +54,49 @@ class Quote(BlockToken):
             stripped = cls.convert_leading_tabs(next_line.lstrip())
             prepend = 0
             if stripped[0] == ">":
-                prepend += 1
-                if stripped[1] == " ":
-                    prepend += 1
-                stripped = stripped[prepend:]
+                next_index = lines.get_pos() + 1
+                stripped, prepend = cls.strip_quote_prefix(next_line)
                 in_code_fence = block.CodeFence.start(stripped)
                 in_block_code = block.BlockCode.start(stripped)
                 blank_line = stripped.strip() == ""
                 line_buffer.append(stripped)
+                line_start_offsets.append(lines.line_start_offset(next_index) + prepend)
+                line_start_columns.append(prepend + 1)
             elif in_code_fence or in_block_code or blank_line:
                 break
             else:
+                next_index = lines.get_pos() + 1
                 line_buffer.append(next_line)
+                line_start_offsets.append(lines.line_start_offset(next_index))
+                line_start_columns.append(1)
             next(lines)
             next_line = lines.peek()
 
         block.Paragraph.parse_setext = False
         parse_buffer = tokenizer.tokenize_block(
-            line_buffer, block.get_token_types(), start_line=start_line
+            line_buffer,
+            block.get_token_types(),
+            start_line=start_line,
+            start_offset=start_offset,
+            line_start_offsets=line_start_offsets,
+            line_start_columns=line_start_columns,
         )
         block.Paragraph.parse_setext = True
         return parse_buffer
+
+    @classmethod
+    def strip_quote_prefix(cls, line):
+        leading = len(line) - len(line.lstrip())
+        stripped = cls.convert_leading_tabs(line.lstrip())
+        if not stripped.startswith(">"):
+            return stripped, leading
+
+        prefix = leading + 1
+        content = stripped[1:]
+        if content.startswith(" "):
+            prefix += 1
+            content = content[1:]
+        return content, prefix
 
     @staticmethod
     def convert_leading_tabs(string):

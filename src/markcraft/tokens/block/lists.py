@@ -74,8 +74,19 @@ class ListItem(BlockToken):
     pattern = re.compile(r"( {0,3})(\d{0,9}[.)]|[+\-*])($|\s+)")
     continuation_pattern = re.compile(r"([ \t]*)(\S.*\n|\n)")
 
-    def __init__(self, parse_buffer, indentation, prepend, leader, line_number=None):
+    def __init__(
+        self,
+        parse_buffer,
+        indentation,
+        prepend,
+        leader,
+        line_number=None,
+        span=None,
+        offset_span=None,
+    ):
         self.line_number = line_number
+        self.span = span
+        self.offset_span = offset_span
         self.leader = leader
         self.indentation = indentation
         self.prepend = prepend
@@ -110,13 +121,46 @@ class ListItem(BlockToken):
         return indentation, prepend, leader, content
 
     @classmethod
+    def marker_prefix_len(cls, line):
+        match_obj = cls.pattern.match(line)
+        if match_obj is None:
+            return 0
+        prepend = len(match_obj.group(0).expandtabs(4))
+        n_spaces = prepend - match_obj.end(2)
+        if n_spaces > 4:
+            return match_obj.end(0) - (n_spaces - 1)
+        return match_obj.end(0)
+
+    @classmethod
+    def continuation_prefix_len(cls, line, prepend):
+        match_obj = cls.continuation_pattern.match(line)
+        if match_obj is None:
+            return 0
+        if match_obj.group(2) == "\n":
+            return len(line) - 1
+
+        consumed_columns = 0
+        consumed_chars = 0
+        for ch in match_obj.group(1):
+            width = 4 if ch == "\t" else 1
+            if consumed_columns + width > prepend:
+                break
+            consumed_columns += width
+            consumed_chars += 1
+        return consumed_chars
+
+    @classmethod
     def read(cls, lines, prev_marker=None):
         from markcraft.tokens import block
 
         next_marker = None
         line_buffer = []
+        line_start_offsets = []
+        line_start_columns = []
         line = next(lines)
+        start_index = lines.get_pos()
         start_line = lines.line_number()
+        start_offset = lines.line_start_offset(start_index)
         next_line = lines.peek()
         indentation, prepend, leader, content = prev_marker if prev_marker else cls.parse_marker(line)
         if content.strip() == "":
@@ -130,9 +174,27 @@ class ListItem(BlockToken):
                 parse_buffer = tokenizer.ParseBuffer()
                 parse_buffer.loose = True
                 next_marker = cls.parse_marker(next_line) if next_line is not None else None
-                return (parse_buffer, indentation, prepend, leader, start_line), next_marker
+                end_index = lines.get_pos()
+                end_line = lines.line_number()
+                end_column = lines.line_end_column(end_index)
+                end_offset = lines.line_end_offset(end_index)
+                return (
+                    (
+                        parse_buffer,
+                        indentation,
+                        prepend,
+                        leader,
+                        start_line,
+                        ((start_line, 1), (end_line, end_column)),
+                        (start_offset, end_offset),
+                    ),
+                    next_marker,
+                )
         else:
             line_buffer.append(content)
+            marker_prefix = cls.marker_prefix_len(line)
+            line_start_offsets.append(start_offset + marker_prefix)
+            line_start_columns.append(marker_prefix + 1)
 
         breaking_tokens = [
             t
@@ -145,6 +207,8 @@ class ListItem(BlockToken):
                 if newline_count:
                     lines.backstep()
                     del line_buffer[-newline_count:]
+                    del line_start_offsets[-newline_count:]
+                    del line_start_columns[-newline_count:]
                 break
 
             continuation = cls.parse_continuation(next_line, prepend)
@@ -153,6 +217,8 @@ class ListItem(BlockToken):
                     if newline_count:
                         lines.backstep()
                         del line_buffer[-newline_count:]
+                        del line_start_offsets[-newline_count:]
+                        del line_start_columns[-newline_count:]
                     break
                 marker_info = cls.parse_marker(next_line)
                 if marker_info is not None:
@@ -161,15 +227,41 @@ class ListItem(BlockToken):
                 if newline_count:
                     lines.backstep()
                     del line_buffer[-newline_count:]
+                    del line_start_offsets[-newline_count:]
+                    del line_start_columns[-newline_count:]
                     break
                 continuation = next_line
 
+            next_index = lines.get_pos() + 1
+            continuation_prefix = 0 if continuation == next_line else cls.continuation_prefix_len(next_line, prepend)
             line_buffer.append(continuation)
+            line_start_offsets.append(lines.line_start_offset(next_index) + continuation_prefix)
+            line_start_columns.append(continuation_prefix + 1)
             newline_count = newline_count + 1 if continuation == "\n" else 0
             next(lines)
             next_line = lines.peek()
 
         parse_buffer = tokenizer.tokenize_block(
-            line_buffer, block.get_token_types(), start_line=start_line
+            line_buffer,
+            block.get_token_types(),
+            start_line=start_line,
+            start_offset=start_offset,
+            line_start_offsets=line_start_offsets,
+            line_start_columns=line_start_columns,
         )
-        return (parse_buffer, indentation, prepend, leader, start_line), next_marker
+        end_index = lines.get_pos()
+        end_line = lines.line_number()
+        end_column = lines.line_end_column(end_index)
+        end_offset = lines.line_end_offset(end_index)
+        return (
+            (
+                parse_buffer,
+                indentation,
+                prepend,
+                leader,
+                start_line,
+                ((start_line, 1), (end_line, end_column)),
+                (start_offset, end_offset),
+            ),
+            next_marker,
+        )
