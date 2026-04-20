@@ -23,6 +23,11 @@ class Document(BlockToken):
         self._parse_signature = None
         self.footnotes = {}
         self.line_number = 1
+        end_line = len(self._source_lines) if self._source_lines else 1
+        end_col = len(self._source_lines[-1]) + 1 if self._source_lines else 1
+        end_offset = sum(len(line) for line in self._source_lines)
+        self.span = ((1, 1), (end_line, end_col))
+        self.offset_span = (0, end_offset)
 
         from markcraft.tokens import block
 
